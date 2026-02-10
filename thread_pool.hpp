@@ -37,17 +37,24 @@ ThreadPool::ThreadPool(size_t num_threads) : stop(false) {
 ThreadPool::~ThreadPool() {
     // TODO: Lock the queue_mutex, set the stop flag to true, and unlock the 
     //       mutex.
+    queue_mutex.lock();
+    stop = true;
+    queue_mutex.unlock();
 
     // TODO: Notify all worker threads to wake up.
     // Hint: Use the condition variable to notify all threads.
+    condition.notify_all();
 
     // TODO: Join all worker threads.
+    for (size_t i = 0; i < workers.size(); ++i) {
+        workers[i].join();
+    }
 }
 
 template<typename Func, typename... Args>
 void ThreadPool::enqueue(Func func, Args... args) {
     // TODO: Lock the queue_mutex
-
+    queue_mutex.lock();
     // The tasks vector expects a std::function<void()> object. This is
     // a function with no arguments. Our function may have arguments, so
     // we must bind the function and arguments together in order to "cast"
@@ -56,9 +63,11 @@ void ThreadPool::enqueue(Func func, Args... args) {
     tasks.emplace(std::bind(func, args...));
 
     // TODO: Unlock the queue_mutex
+    queue_mutex.unlock();
 
     // TODO: Notify one worker thread to wake up and process the task.
     // Hint: Use the condition variable to notify one thread.
+    condition.notify_one();
 }
 
 void ThreadPool::worker_thread() {
@@ -66,6 +75,7 @@ void ThreadPool::worker_thread() {
         std::function<void()> task;
         {
             // TODO: Declare a std::unique_lock with the queue_mutex.
+            std::unique_lock<std::mutex> u1(queue_mutex);
 
             // This loop is here to handle spurious wake-ups. If the condition
             // variable is notified but the condition is not met, the thread
@@ -73,6 +83,7 @@ void ThreadPool::worker_thread() {
             // condition variables.
             while (!stop && tasks.empty()) {
                 // TODO: Wait for a notification.
+                condition.wait(u1);
             }
 
             // If the stop flag is set and the task queue is empty, return.

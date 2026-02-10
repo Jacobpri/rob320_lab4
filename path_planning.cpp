@@ -38,13 +38,20 @@ void path_planner_worker_thread(PathPlanner &path_planner,
                                 std::counting_semaphore<255> &sem) {
     std::vector<Node> path;
     // TODO: Use the path_planner to find a path from start to goal.
+    path = path_planner.find_path(start_x, start_y, goal_x, goal_y);
 
     // TODO: Declare a std::lock_guard with the mutex to protect access to the 
     //       paths queue.
-
+    std::lock_guard(mutex);
     // TODO: If the path is empty, release the semaphore and return.
+    if (path.empty()) {
+        sem.release();
+        return;
+    }
 
     // TODO: Push the path to the paths queue and release the semaphore.
+    paths.push(path);
+    sem.release();
 }
 
 // Function to find paths from multiple start to goal coordinates
@@ -75,20 +82,27 @@ void multithread_path_plan(std::vector<std::pair<int16_t, int16_t>>& start,
     while (threads_finished < num_plans) {
         // TODO: Acquire the semaphore and inrcrement the threads_finished 
         //       counter.
-
+        sem.acquire();
+        ++threads_finished;
         std::vector<Node> path;
         {
             // TODO: Declare a std::lock_guard with the mutex to protect access 
             //       to the paths queue.
+            std::lock_guard(mutex);
             
             // TODO: If the paths queue is empty, continue to the next 
             //       iteration.
+            if (paths.empty()) {
+                continue;
+            }
 
             // TODO: Get the path from the front of the queue and pop it.
             // Hint: Use std::move to transfer ownership (this is faster than 
             //       copying).
-
+            path = std::move(paths.front());
             // TODO: Pop the path from the queue.
+            paths.pop();
+
         }
 
         // Update the map with the path found by the thread
