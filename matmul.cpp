@@ -132,9 +132,9 @@ Matrix multiply_threads(const Matrix &A, const Matrix &B) {
     //             loop that creates the threads
     for (size_t i = 0; i < rows; ++i)  {
         const std::vector<float> &A_i = A[i];
-        const std::vector<float> &result_i = result[i];
+        std::vector<float> &result_i = result[i];
         threads.emplace_back(std::thread(matrix_multiply_task, std::ref(A_i), std::ref(B), 
-                                std::ref(result_i), std::ref(common), std::ref(cols)));
+                                std::ref(result_i), common, cols));
     }
 
     // TODO: Join all threads
