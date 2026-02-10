@@ -42,7 +42,7 @@ void path_planner_worker_thread(PathPlanner &path_planner,
 
     // TODO: Declare a std::lock_guard with the mutex to protect access to the 
     //       paths queue.
-    std::lock_guard(mutex);
+    std::lock_guard<std::mutex> lock(mutex);
     // TODO: If the path is empty, release the semaphore and return.
     if (path.empty()) {
         sem.release();
