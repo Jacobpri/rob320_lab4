@@ -88,7 +88,7 @@ void multithread_path_plan(std::vector<std::pair<int16_t, int16_t>>& start,
         {
             // TODO: Declare a std::lock_guard with the mutex to protect access 
             //       to the paths queue.
-            std::lock_guard(mutex);
+            std::lock_guard<std::mutex> lock(mutex);
             
             // TODO: If the paths queue is empty, continue to the next 
             //       iteration.
